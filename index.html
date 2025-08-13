@@ -2,201 +2,50 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#007bff">
-  <meta name="description" content="سبورة تفاعلية ذكية تدعم القلم، النصوص، الصور، وقلم S Pen">
-  <meta name="touch-action" content="none">
-  <link rel="manifest" href="manifest.json">
-  <title>السبورة التفاعلية</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>سبورة تفاعلية</title>
+  <link rel="stylesheet" href="style.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #f0f0f0;
-      direction: rtl;
-    }
-    .toolbar {
-      padding: 10px;
-      background: #007bff;
-      color: white;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      overflow-x: auto;
-    }
-    .toolbar button, .toolbar input {
-      padding: 8px 12px;
-      font-size: 14px;
-    }
-    #canvas {
-      touch-action: none;
-      display: block;
-      margin: 0 auto;
-      background: white;
-      border-top: 1px solid #ccc;
-    }
-  </style>
 </head>
 <body>
-  <div class="toolbar">
-    <button id="pen">قلم</button>
-    <button id="eraser">ممحاة</button>
-    <input type="color" id="colorPicker" value="#000000">
-    <input type="range" id="thickness" min="1" max="20" value="5">
-    <span id="thicknessValue">5</span>
-    <button id="addText">➕ نص</button>
-    <button id="clear">مسح الكل</button>
-    <button id="saveImg">💾 حفظ صورة</button>
-    <input type="file" id="uploadImg" accept="image/*" style="display:none">
-    <button id="loadImgBtn">🖼️ صورة</button>
+  <div class="container">
+    <div class="toolbar">
+      <button id="pen">قلم</button>
+      <button id="eraser">ممحاة</button>
+      <button id="select">تحديد</button>
+      <input type="color" id="colorPicker" value="#000000" />
+      <input type="range" id="thickness" min="1" max="20" value="5" />
+      <span>سماكة: <span id="thicknessValue">5</span></span>
+      <button id="addText">إضافة نص</button>
+      <input type="color" id="bgColor" value="#ffffff" /> خلفية
+      <button id="clear">محو الكل</button>
+      <button id="record">بدء التسجيل</button>
+      <button id="previewVideo">معاينة التسجيل</button>
+      <button id="exportImg">تصدير كصورة</button>
+      <button id="uploadImageButton">🖼️ تحميل صورة</button>
+      <select id="linePattern">
+        <option value="blank">خلفية فارغة</option>
+        <option value="lined">خطوط أفقية</option>
+        <option value="grid">شبكة</option>
+        <option value="dots">نقاط</option>
+      </select>
+      <button id="saveProject">💾 حفظ المشروع</button>
+      <button id="loadProject">📂 فتح مشروع</button>
+      <button id="openCamera">🎥 فتح الكاميرا</button>
+      <button id="closeCamera" style="display:none;">⏹️ إغلاق الكاميرا</button>
+      <div style="margin-top:10px;">
+        <h3>التسجيل: <span id="duration">لم يُسجل بعد</span></h3>
+        <button id="trimStart">قص من البداية</button>
+        <button id="trimEnd">قص من النهاية</button>
+      </div>
+    </div>
+    <canvas id="canvas" width="1200" height="600"></canvas>
   </div>
-  <canvas id="canvas"></canvas>
 
-  <script>
-    // تهيئة السبورة
-    const canvas = new fabric.Canvas('canvas', {
-      isDrawingMode: true,
-      enableRetinaScaling: false,
-      width: window.innerWidth,
-      height: window.innerHeight - 80
-    });
-
-    // تحسينات القلم
-    const brush = canvas.freeDrawingBrush;
-    brush.width = 5;
-    brush.color = '#000000';
-    brush.strokeLineCap = 'round';
-    brush.strokeLineJoin = 'round';
-
-    // تعطيل التحديد التلقائي
-    canvas.selection = false;
-
-    // ضبط الحجم
-    function resizeCanvas() {
-      const w = window.innerWidth;
-      const h = window.innerHeight - 80;
-      canvas.setDimensions({ width: w, height: h });
-    }
-    window.addEventListener('load', resizeCanvas);
-    window.addEventListener('resize', resizeCanvas);
-
-    // عناصر الواجهة
-    const penBtn = document.getElementById('pen');
-    const eraserBtn = document.getElementById('eraser');
-    const colorPicker = document.getElementById('colorPicker');
-    const thickness = document.getElementById('thickness');
-    const thicknessValue = document.getElementById('thicknessValue');
-    const addTextBtn = document.getElementById('addText');
-    const clearBtn = document.getElementById('clear');
-    const saveImgBtn = document.getElementById('saveImg');
-    const loadImgBtn = document.getElementById('loadImgBtn');
-    const uploadImg = document.getElementById('uploadImg');
-
-    let originalWidth = parseInt(thickness.value, 10);
-    thicknessValue.textContent = originalWidth;
-
-    thickness.addEventListener('input', () => {
-      originalWidth = parseInt(thickness.value, 10);
-      thicknessValue.textContent = originalWidth;
-      if (canvas.isDrawingMode) {
-        brush.width = originalWidth;
-      }
-    });
-
-    // تفعيل القلم
-    penBtn.addEventListener('click', () => {
-      canvas.isDrawingMode = true;
-      brush.color = colorPicker.value;
-      brush.width = originalWidth;
-      isUsingPressure = true;
-    });
-
-    // تفعيل الممحاة
-    eraserBtn.addEventListener('click', () => {
-      canvas.isDrawingMode = true;
-      brush.color = '#ffffff';
-      brush.width = originalWidth + 15;
-      isUsingPressure = false;
-    });
-
-    // إضافة نص
-    addTextBtn.addEventListener('click', () => {
-      const text = new fabric.IText('نص هنا...', {
-        left: 50,
-        top: 50,
-        fill: colorPicker.value,
-        fontSize: 24
-      });
-      canvas.add(text);
-      canvas.setActiveObject(text);
-    });
-
-    // تحميل صورة
-    loadImgBtn.addEventListener('click', () => uploadImg.click());
-    uploadImg.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (url) => {
-        fabric.Image.fromURL(url.target.result, (img) => {
-          img.scaleToWidth(200);
-          img.set({ hasControls: true, cornerStyle: 'circle' });
-          canvas.add(img);
-        });
-      };
-      reader.readAsDataURL(file);
-    });
-
-    // مسح الكل
-    clearBtn.addEventListener('click', () => canvas.clear());
-
-    // حفظ كصورة
-    saveImgBtn.addEventListener('click', () => {
-      const dataURL = canvas.toDataURL({ format: 'png' });
-      const a = document.createElement('a');
-      a.href = dataURL;
-      a.download = 'سبورة_تفاعلية.png';
-      a.click();
-    });
-
-    // دعم القلم الذكي (S Pen - Pressure)
-    let isUsingPressure = true;
-
-    canvas.on('mouse:down', (e) => {
-      if (e.e.pointerType === 'pen') {
-        console.log('قلم ذكي مُكتشف: S Pen');
-      }
-    });
-
-    canvas.on('mouse:move', (e) => {
-      if (e && e.e && e.e.pressure !== undefined && canvas.isDrawingMode && isUsingPressure) {
-        const pressure = e.e.pressure;
-        const minWidth = originalWidth;
-        const maxWidth = originalWidth * 3;
-        brush.width = minWidth + (pressure * (maxWidth - minWidth));
-      }
-    });
-
-    canvas.on('mouse:up', () => {
-      if (isUsingPressure) {
-        brush.width = originalWidth;
-      }
-    });
-
-    // تحسين الأداء
-    const ctx = canvas.getContext();
-    ctx.imageSmoothingEnabled = true;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-
-    // منع التكبير العرضي
-    document.body.addEventListener('touchstart', (e) => {
-      if (e.touches.length > 1) e.preventDefault();
-    }, { passive: false });
-
-    // تعطيل التخزين المؤقت لتحسين القلم
-    fabric.Object.prototype.objectCaching = false;
-  </script>
+  <input type="file" id="fileInput" accept=".sboard" style="display:none" />
+  <div id="videoContainer" style="position:absolute; top:20px; left:20px; width:240px; height:180px; border:2px solid #007bff; border-radius:8px; overflow:hidden; display:none; background:black;">
+    <video id="cameraPreview" autoplay style="width:100%; height:100%; object-fit:cover;"></video>
+  </div>
+  <script src="script.js"></script>
 </body>
 </html>
