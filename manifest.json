@@ -1,26 +1,26 @@
 {
   "name": "السبورة التفاعلية",
   "short_name": "سبورة",
-  "description": "أداة تعليمية ذكية تدعم القلم، النصوص، الصور، والتسجيل. مناسبة للمعلمين والطلاب.",
+  "description": "أداة تعليمية تفاعلية تدعم القلم، النصوص، الصور، والتسجيل. مناسبة للمعلمين والطلاب.",
   "start_url": "./",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#ffffff",
   "theme_color": "#007bff",
+  "lang": "ar",
+  "dir": "rtl",
   "icons": [
     {
       "src": "icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
-  ],
-  "lang": "ar",
-  "dir": "rtl"
+  ]
 }
